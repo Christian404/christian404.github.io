@@ -10,10 +10,10 @@ const english = {
 };
 const originals = new Map([...document.querySelectorAll('[data-i18n]')].map(el => [el,el.innerText]));
 Object.assign(english, {
- languageLabel:'Language',themeLight:'Light theme',themeDark:'Dark theme',location:'Sinop, MT · Brazil',
+ easterNote:'Permission granted: stay curious. A signal is not a conclusion — investigate the context.',languageLabel:'Language',themeLight:'Light theme',themeDark:'Dark theme',location:'Sinop, MT · Brazil',
  focus:'Blue Team · Infrastructure · Red Team labs',professional:'PROFESSIONAL EXPERIENCE',
  skillsEyebrow:'04 / SKILLS',skillsTitle:'Defend with context.\nStudy the adversary.',skillsIntro:'Applied experience and ongoing learning, with the scope of each skill made explicit.',
- workScope:'Professional experience',projectScope:'Personal project',labScope:'Studies & labs',skillInfraTitle:'Networks & infrastructure',
+ workScope:'Professional experience',projectScope:'Personal project',labScope:'Studies & labs',skillInfraTitle:'Networks & infrastructure',easterNote:'Curiosity needs no root access. Good evidence beats a thousand blinking alerts.',
  skillBlue:'Wazuh in production, log collection and correlation, event investigation, detection tuning and response documentation.',
  skillInfra:'Windows/Linux servers, AD, GPO, Microsoft 365, Intune, Sophos, VPNs and VLANs.',
  skillProject:'Offline triage with synthetic data, integrity monitoring and documented investigation playbooks.',
@@ -26,12 +26,12 @@ function setLanguage(next){
   language=next==='en'?'en':'pt'; document.documentElement.lang=language==='en'?'en':'pt-BR';
   originals.forEach((text,el)=>renderText(el,language==='en'?(english[el.dataset.i18n]||text):text));
   document.querySelectorAll('[data-language-content]').forEach(el=>{el.hidden=el.dataset.languageContent!==language;});
-  const select=document.getElementById('language');if(select)select.value=language; updateThemeLabel(); document.title=language==='en'?'Gabriel Christian — Blue Team & Information Security':'Gabriel Christian — Blue Team & Segurança da Informação';
+  const select=document.getElementById('language');if(select){document.getElementById('language-value').textContent=language==='en'?'🇺🇸 English':'🇧🇷 Português';document.querySelectorAll('[data-language]').forEach(option=>option.setAttribute('aria-selected',String(option.dataset.language===language)));} updateThemeLabel(); document.title=language==='en'?'Gabriel Christian — Blue Team & Information Security':'Gabriel Christian — Blue Team & Segurança da Informação';
   const status=document.getElementById('contact-status');if(status)status.textContent='';
   try{localStorage.setItem('gc-language',language);}catch{}
 }
 let theme='dark';
-function updateThemeLabel(){const toggle=document.getElementById('theme-toggle');if(!toggle)return;const light=theme==='light';toggle.setAttribute('aria-pressed',String(light));toggle.setAttribute('aria-label',language==='en'?(light?'Activate dark theme':'Activate light theme'):(light?'Ativar tema escuro':'Ativar tema claro'));toggle.querySelector('[aria-hidden]').textContent=light?'☾':'☀';toggle.querySelector('.theme-label').textContent=language==='en'?(light?'Dark theme':'Light theme'):(light?'Tema escuro':'Tema claro');}
+function updateThemeLabel(){const toggle=document.getElementById('theme-toggle');if(!toggle)return;const light=theme==='light';toggle.setAttribute('aria-pressed',String(light));toggle.setAttribute('aria-label',language==='en'?(light?'Activate dark theme':'Activate light theme'):(light?'Ativar tema escuro':'Ativar tema claro'));toggle.querySelector('.theme-label').textContent=language==='en'?(light?'Light':'Dark'):(light?'Claro':'Escuro');}
 const themeState=window.gcThemeState||{choice:null,media:null};
 function setTheme(next,persist=true){theme=next==='light'?'light':'dark';document.documentElement.dataset.theme=theme;document.querySelector('meta[name="theme-color"]')?.setAttribute('content',theme==='light'?'#f4f7fb':'#0a101c');updateThemeLabel();if(persist){themeState.choice=theme;try{localStorage.setItem('gc-theme',theme);}catch{}}}
 setTheme(themeState.choice||(themeState.media?.matches?'light':'dark'),false);
@@ -39,8 +39,21 @@ function followSystemTheme(event){if(!themeState.choice)setTheme(event.matches?'
 if(themeState.media?.addEventListener)themeState.media.addEventListener('change',followSystemTheme);
 else if(themeState.media?.addListener)themeState.media.addListener(followSystemTheme);
 document.getElementById('theme-toggle')?.addEventListener('click',()=>setTheme(theme==='dark'?'light':'dark'));
+document.getElementById('theme-toggle')?.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&!event.repeat){event.preventDefault();setTheme(theme==='dark'?'light':'dark');}});
 try{setLanguage(new URLSearchParams(location.search).get('lang')||localStorage.getItem('gc-language')||'pt');}catch{setLanguage('pt');}
-document.getElementById('language')?.addEventListener('change',event=>setLanguage(event.target.value));
+const languageTrigger=document.getElementById('language'),languageOptions=document.getElementById('language-options');
+const languageItems=[...document.querySelectorAll('[data-language]')];
+function closeLanguage(restoreFocus=false){if(!languageTrigger)return;languageOptions.hidden=true;languageTrigger.setAttribute('aria-expanded','false');if(restoreFocus)languageTrigger.focus({preventScroll:true});}
+function openLanguage(index=language==='en'?1:0){languageOptions.hidden=false;languageTrigger.setAttribute('aria-expanded','true');languageItems[index].focus({preventScroll:true});}
+languageTrigger?.addEventListener('click',()=>languageOptions.hidden?openLanguage():closeLanguage(true));
+languageTrigger?.addEventListener('keydown',event=>{if(['ArrowDown','ArrowUp'].includes(event.key)){event.preventDefault();openLanguage(event.key==='ArrowUp'?1:0);}});
+languageItems.forEach((option,index)=>{
+ const choose=()=>{const y=scrollY;setLanguage(option.dataset.language);closeLanguage(true);window.scrollTo({top:y,behavior:'instant'});restartTyping();updateTimeline();};
+ option.addEventListener('click',choose);
+ option.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose();}else if(event.key==='Escape'){event.preventDefault();closeLanguage(true);}else if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?1:(index+(event.key==='ArrowDown'?1:-1)+2)%2;languageItems[next].focus({preventScroll:true});}else if(event.key==='Tab')closeLanguage();});
+});
+document.addEventListener('click',event=>{if(!event.target.closest('.language-picker'))closeLanguage();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&languageOptions&&!languageOptions.hidden)closeLanguage(true);});
 document.getElementById('print-resume')?.addEventListener('click',()=>window.print());
 const form=document.getElementById('contact-form');
 function message(){
@@ -61,5 +74,15 @@ document.getElementById('whatsapp')?.addEventListener('click',()=>{
 // Content is visible by default; only elements entering the viewport are animated.
 if('IntersectionObserver' in window&&typeof window.matchMedia==='function'&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
  const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-revealed');observer.unobserve(entry.target);}}),{threshold:.08});
- document.querySelectorAll('.project-card,.timeline-item,.skill-card,.about-grid,.contact-grid').forEach(element=>observer.observe(element));
+ document.querySelectorAll('.project-card,.skill-card,.about-grid,.contact-grid').forEach(element=>observer.observe(element));
 }
+
+function reducedMotion(){try{return window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch{return true;}}
+function restartTyping(){const highlight=document.querySelector('#hero-title .accent');if(!highlight)return;highlight.classList.remove('typing-highlight');if(!reducedMotion()){void highlight.offsetWidth;highlight.classList.add('typing-highlight');}}
+restartTyping();
+const path=document.querySelector('.timeline');
+function updateTimeline(){if(!path)return;const bounds=path.getBoundingClientRect();const progress=reducedMotion()?1:Math.max(0,Math.min(1,(innerHeight*.72-bounds.top)/bounds.height));path.style.setProperty('--path-progress',progress);path.classList.add('timeline-enhanced');path.querySelectorAll('.timeline-item').forEach(item=>{item.classList.toggle('path-reached',reducedMotion()||item.getBoundingClientRect().top<innerHeight*.78);});}
+let pathFrame=false;
+window.addEventListener('scroll',()=>{if(!pathFrame){pathFrame=true;requestAnimationFrame(()=>{updateTimeline();pathFrame=false;});}},{passive:true});
+window.addEventListener('resize',updateTimeline);updateTimeline();
+try{window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',()=>{restartTyping();updateTimeline();});}catch{}
