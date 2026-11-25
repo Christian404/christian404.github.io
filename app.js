@@ -32,8 +32,12 @@ function setLanguage(next){
 }
 let theme='dark';
 function updateThemeLabel(){const toggle=document.getElementById('theme-toggle');if(!toggle)return;const light=theme==='light';toggle.setAttribute('aria-pressed',String(light));toggle.setAttribute('aria-label',language==='en'?(light?'Activate dark theme':'Activate light theme'):(light?'Ativar tema escuro':'Ativar tema claro'));toggle.querySelector('[aria-hidden]').textContent=light?'☾':'☀';toggle.querySelector('.theme-label').textContent=language==='en'?(light?'Dark theme':'Light theme'):(light?'Tema escuro':'Tema claro');}
-function setTheme(next){theme=next==='light'?'light':'dark';document.documentElement.dataset.theme=theme;document.querySelector('meta[name="theme-color"]')?.setAttribute('content',theme==='light'?'#f4f7fb':'#0a101c');updateThemeLabel();try{localStorage.setItem('gc-theme',theme);}catch{}}
-try{setTheme(localStorage.getItem('gc-theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));}catch{setTheme('dark');}
+const themeState=window.gcThemeState||{choice:null,media:null};
+function setTheme(next,persist=true){theme=next==='light'?'light':'dark';document.documentElement.dataset.theme=theme;document.querySelector('meta[name="theme-color"]')?.setAttribute('content',theme==='light'?'#f4f7fb':'#0a101c');updateThemeLabel();if(persist){themeState.choice=theme;try{localStorage.setItem('gc-theme',theme);}catch{}}}
+setTheme(themeState.choice||(themeState.media?.matches?'light':'dark'),false);
+function followSystemTheme(event){if(!themeState.choice)setTheme(event.matches?'light':'dark',false);}
+if(themeState.media?.addEventListener)themeState.media.addEventListener('change',followSystemTheme);
+else if(themeState.media?.addListener)themeState.media.addListener(followSystemTheme);
 document.getElementById('theme-toggle')?.addEventListener('click',()=>setTheme(theme==='dark'?'light':'dark'));
 try{setLanguage(new URLSearchParams(location.search).get('lang')||localStorage.getItem('gc-language')||'pt');}catch{setLanguage('pt');}
 document.getElementById('language')?.addEventListener('change',event=>setLanguage(event.target.value));
@@ -55,7 +59,7 @@ document.getElementById('whatsapp')?.addEventListener('click',()=>{
 });
 
 // Content is visible by default; only elements entering the viewport are animated.
-if('IntersectionObserver' in window&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+if('IntersectionObserver' in window&&typeof window.matchMedia==='function'&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
  const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-revealed');observer.unobserve(entry.target);}}),{threshold:.08});
  document.querySelectorAll('.project-card,.timeline-item,.skill-card,.about-grid,.contact-grid').forEach(element=>observer.observe(element));
 }

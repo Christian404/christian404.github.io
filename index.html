@@ -7,7 +7,10 @@
   <meta name="theme-color" content="#0b1214"><meta property="og:title" content="Gabriel Christian | HACKER · Blue Team">
   <meta property="og:description" content="Investigação, contexto e evidências. Conheça minha trajetória e meus projetos de segurança defensiva.">
   <meta property="og:image" content="https://christian404.github.io/assets/gabriel.png"><meta property="og:type" content="website">
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><script src="app.js" defer></script>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><script>
+// Apply the visitor/system preference before styles load to prevent a theme flash.
+(function(){var choice=null,media=null;try{var saved=localStorage.getItem('gc-theme');if(saved==='light'||saved==='dark')choice=saved;}catch(e){}try{if(typeof window.matchMedia==='function')media=window.matchMedia('(prefers-color-scheme: light)');}catch(e){}var initial=choice||(media&&media.matches?'light':'dark');document.documentElement.dataset.theme=initial;window.gcThemeState={choice:choice,media:media};})();
+</script><link rel="stylesheet" href="style.css"><script src="app.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main" data-i18n="skip">Pular para o conteúdo</a>
