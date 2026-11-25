@@ -21,6 +21,7 @@ Object.assign(english, {
  contactEyebrow:'05 / CONTACT'
 });
 let language = 'pt';
+let typingTimers=[];
 function renderText(element,text){const lines=text.split('\n');element.replaceChildren(...lines.flatMap((line,index)=>index?[document.createElement('br'),document.createTextNode(line)]:[document.createTextNode(line)]));}
 function setLanguage(next){
   language=next==='en'?'en':'pt'; document.documentElement.lang=language==='en'?'en':'pt-BR';
@@ -29,9 +30,10 @@ function setLanguage(next){
   const select=document.getElementById('language');if(select){document.getElementById('language-value').textContent=language==='en'?'🇺🇸 English':'🇧🇷 Português';document.querySelectorAll('[data-language]').forEach(option=>option.setAttribute('aria-selected',String(option.dataset.language===language)));} updateThemeLabel(); document.title=language==='en'?'Gabriel Christian — Blue Team & Information Security':'Gabriel Christian — Blue Team & Segurança da Informação';
   const status=document.getElementById('contact-status');if(status)status.textContent='';
   try{localStorage.setItem('gc-language',language);}catch{}
+  restartTyping();
 }
 let theme='dark';
-function updateThemeLabel(){const toggle=document.getElementById('theme-toggle');if(!toggle)return;const light=theme==='light';toggle.setAttribute('aria-pressed',String(light));toggle.setAttribute('aria-label',language==='en'?(light?'Activate dark theme':'Activate light theme'):(light?'Ativar tema escuro':'Ativar tema claro'));toggle.querySelector('.theme-label').textContent=language==='en'?(light?'Light':'Dark'):(light?'Claro':'Escuro');}
+function updateThemeLabel(){const toggle=document.getElementById('theme-toggle');if(!toggle)return;const light=theme==='light';toggle.setAttribute('aria-pressed',String(light));toggle.setAttribute('aria-label',language==='en'?(light?'Activate dark theme':'Activate light theme'):(light?'Ativar tema escuro':'Ativar tema claro'));}
 const themeState=window.gcThemeState||{choice:null,media:null};
 function setTheme(next,persist=true){theme=next==='light'?'light':'dark';document.documentElement.dataset.theme=theme;document.querySelector('meta[name="theme-color"]')?.setAttribute('content',theme==='light'?'#f4f7fb':'#0a101c');updateThemeLabel();if(persist){themeState.choice=theme;try{localStorage.setItem('gc-theme',theme);}catch{}}}
 setTheme(themeState.choice||(themeState.media?.matches?'light':'dark'),false);
@@ -78,8 +80,25 @@ if('IntersectionObserver' in window&&typeof window.matchMedia==='function'&&!win
 }
 
 function reducedMotion(){try{return window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch{return true;}}
-function restartTyping(){const highlight=document.querySelector('#hero-title .accent');if(!highlight)return;highlight.classList.remove('typing-highlight');if(!reducedMotion()){void highlight.offsetWidth;highlight.classList.add('typing-highlight');}}
-restartTyping();
+function restartTyping(){
+ typingTimers.forEach(clearTimeout);typingTimers=[];
+ const heading=document.getElementById('hero-title');if(!heading)return;
+ const lines=[...heading.querySelectorAll('[data-i18n]')];
+ const texts=lines.map(line=>language==='en'?(english[line.dataset.i18n]||originals.get(line)):originals.get(line));
+ heading.setAttribute('aria-label',texts.join(' '));
+ lines.forEach((line,index)=>{line.classList.remove('typing-highlight');line.replaceChildren(document.createTextNode(texts[index]));});
+ if(reducedMotion())return;
+ let elapsed=60;
+ lines.forEach((line,index)=>{
+  const text=texts[index],reserve=document.createElement('span'),typed=document.createElement('span');
+  reserve.className='typing-reserve';reserve.setAttribute('aria-hidden','true');reserve.textContent=text;
+  typed.className='typing-live';typed.setAttribute('aria-hidden','true');line.classList.add('typing-line');line.replaceChildren(reserve,typed);
+  const characters=Array.from(text);
+  characters.forEach((character,position)=>{const delay=elapsed;typingTimers.push(setTimeout(()=>{lines.forEach(other=>other.classList.remove('typing-active'));line.classList.add('typing-active');typed.textContent=characters.slice(0,position+1).join('');},delay));elapsed+=34;});
+  elapsed+=90;
+ });
+ typingTimers.push(setTimeout(()=>lines.forEach(line=>line.classList.remove('typing-active')),elapsed+80));
+}
 const path=document.querySelector('.timeline');
 function updateTimeline(){if(!path)return;const bounds=path.getBoundingClientRect();const progress=reducedMotion()?1:Math.max(0,Math.min(1,(innerHeight*.72-bounds.top)/bounds.height));path.style.setProperty('--path-progress',progress);path.classList.add('timeline-enhanced');path.querySelectorAll('.timeline-item').forEach(item=>{item.classList.toggle('path-reached',reducedMotion()||item.getBoundingClientRect().top<innerHeight*.78);});}
 let pathFrame=false;
