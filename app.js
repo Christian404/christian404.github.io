@@ -9,18 +9,34 @@ const english = {
   back:'Back to portfolio',print:'Print / save PDF',resumeTitle:'Gabriel Christian de Oliveira',resumeSubtitle:'Information Security Analyst · Blue Team · SIEM / Infrastructure'
 };
 const originals = new Map([...document.querySelectorAll('[data-i18n]')].map(el => [el,el.innerText]));
+Object.assign(english, {
+ languageLabel:'Language',themeLight:'Light theme',themeDark:'Dark theme',location:'Sinop, MT · Brazil',
+ focus:'Blue Team · Infrastructure · Red Team labs',professional:'PROFESSIONAL EXPERIENCE',
+ skillsEyebrow:'04 / SKILLS',skillsTitle:'Defend with context.\nStudy the adversary.',skillsIntro:'Applied experience and ongoing learning, with the scope of each skill made explicit.',
+ workScope:'Professional experience',projectScope:'Personal project',labScope:'Studies & labs',skillInfraTitle:'Networks & infrastructure',
+ skillBlue:'Wazuh in production, log collection and correlation, event investigation, detection tuning and response documentation.',
+ skillInfra:'Windows/Linux servers, AD, GPO, Microsoft 365, Intune, Sophos, VPNs and VLANs.',
+ skillProject:'Offline triage with synthetic data, integrity monitoring and documented investigation playbooks.',
+ skillRed:'Authentication studies using Kali and Medusa. Authorized vulnerability assessment in staging is part of my professional experience.',
+ contactEyebrow:'05 / CONTACT'
+});
 let language = 'pt';
 function renderText(element,text){const lines=text.split('\n');element.replaceChildren(...lines.flatMap((line,index)=>index?[document.createElement('br'),document.createTextNode(line)]:[document.createTextNode(line)]));}
 function setLanguage(next){
   language=next==='en'?'en':'pt'; document.documentElement.lang=language==='en'?'en':'pt-BR';
   originals.forEach((text,el)=>renderText(el,language==='en'?(english[el.dataset.i18n]||text):text));
   document.querySelectorAll('[data-language-content]').forEach(el=>{el.hidden=el.dataset.languageContent!==language;});
-  const button=document.getElementById('language');if(button){button.textContent=language==='en'?'PT ↗':'EN ↗';button.setAttribute('aria-label',language==='en'?'Mudar para português':'Switch to English');}
+  const select=document.getElementById('language');if(select)select.value=language; updateThemeLabel(); document.title=language==='en'?'Gabriel Christian — Blue Team & Information Security':'Gabriel Christian — Blue Team & Segurança da Informação';
   const status=document.getElementById('contact-status');if(status)status.textContent='';
   try{localStorage.setItem('gc-language',language);}catch{}
 }
+let theme='dark';
+function updateThemeLabel(){const toggle=document.getElementById('theme-toggle');if(!toggle)return;const light=theme==='light';toggle.setAttribute('aria-pressed',String(light));toggle.setAttribute('aria-label',language==='en'?(light?'Activate dark theme':'Activate light theme'):(light?'Ativar tema escuro':'Ativar tema claro'));toggle.querySelector('[aria-hidden]').textContent=light?'☾':'☀';toggle.querySelector('.theme-label').textContent=language==='en'?(light?'Dark theme':'Light theme'):(light?'Tema escuro':'Tema claro');}
+function setTheme(next){theme=next==='light'?'light':'dark';document.documentElement.dataset.theme=theme;document.querySelector('meta[name="theme-color"]')?.setAttribute('content',theme==='light'?'#f4f7fb':'#0a101c');updateThemeLabel();try{localStorage.setItem('gc-theme',theme);}catch{}}
+try{setTheme(localStorage.getItem('gc-theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));}catch{setTheme('dark');}
+document.getElementById('theme-toggle')?.addEventListener('click',()=>setTheme(theme==='dark'?'light':'dark'));
 try{setLanguage(new URLSearchParams(location.search).get('lang')||localStorage.getItem('gc-language')||'pt');}catch{setLanguage('pt');}
-document.getElementById('language')?.addEventListener('click',()=>setLanguage(language==='pt'?'en':'pt'));
+document.getElementById('language')?.addEventListener('change',event=>setLanguage(event.target.value));
 document.getElementById('print-resume')?.addEventListener('click',()=>window.print());
 const form=document.getElementById('contact-form');
 function message(){
@@ -37,3 +53,9 @@ document.getElementById('whatsapp')?.addEventListener('click',()=>{
   if(!form.reportValidity())return;window.open(`https://wa.me/5512988379666?text=${encodeURIComponent(message())}`,'_blank','noopener,noreferrer');
   document.getElementById('contact-status').textContent=language==='en'?'Review and send your message in WhatsApp.':'Revise e envie sua mensagem no WhatsApp.';
 });
+
+// Content is visible by default; only elements entering the viewport are animated.
+if('IntersectionObserver' in window&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+ const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-revealed');observer.unobserve(entry.target);}}),{threshold:.08});
+ document.querySelectorAll('.project-card,.timeline-item,.skill-card,.about-grid,.contact-grid').forEach(element=>observer.observe(element));
+}
